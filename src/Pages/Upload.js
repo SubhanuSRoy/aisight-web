@@ -60,7 +60,6 @@ function Upload() {
         label: "Your diagnosis",
         data: resArr,
         backgroundColor: "#551D6A",
-        
       },
     ],
   };
@@ -75,7 +74,6 @@ function Upload() {
 
     console.log(formData);
 
-
     // fetch("http://172.17.239.224:8050/file", {
     //   method: "POST",
     //   body: formData,
@@ -83,14 +81,15 @@ function Upload() {
     // .then(response => console.log(response))
     // .catch(error => console.log(error));
 
-    axios.post("http://172.17.239.224:8050/file",formData)
-    .then((res)=>{
-      setResArr(res.data.Scores)
-    })
-    .catch((error) => {
-      console.log(error.message);
-      // notify("error");
-    });
+    axios
+      .post("http://192.168.245.158:8050/file", formData)
+      .then((res) => {
+        setResArr(res.data.Scores);
+      })
+      .catch((error) => {
+        console.log(error.message);
+        // notify("error");
+      });
   };
 
   // file upload
@@ -111,17 +110,26 @@ function Upload() {
           {resArr == null ? (
             <>
               <img src={imageFile} alt="cannot display" className="max-w-sm" />
-              <form onSubmit={handleSubmit}>
-                <button
-                  type="submit"
-                  className="bg-[#5f47a8] text-white font-bold rounded-md mt-4 p-4"
-                >
-                  Get Diagnosis
-                </button>
-              </form>
+              {loading && <img src={waiting} />}
+              {!loading && (
+                <form onSubmit={handleSubmit}>
+                  <button
+                    type="submit"
+                    className="bg-[#5f47a8] text-white font-bold rounded-md mt-4 p-4"
+                  >
+                    Get Diagnosis
+                  </button>
+                </form>
+              )}
             </>
           ) : (
-            <Bar options={options} data={data} className="text-black  sm:w-1/2"/>
+            <div className="bg-white rounded-md p-4 w-3/4 h-3/4">
+              <Bar
+                options={options}
+                data={data}
+                className="text-black w-full"
+              />
+            </div>
           )}
         </>
       )}

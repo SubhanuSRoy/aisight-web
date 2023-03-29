@@ -8,9 +8,25 @@ import React, {
 import Webcam from "react-webcam";
 import { motion } from "framer-motion";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+import axios from "axios";
+import waiting from "../images/waiting.gif";
+
+
 function Capture() {
   const [img, setImg] = useState(null);
   const [imageFile, setimageFile] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const webcamRef = useRef(null);
 
@@ -27,12 +43,48 @@ function Capture() {
     console.log(img);
   }, [webcamRef]);
 
+  const [resArr, setResArr] = useState(null);
+
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend
+  );
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: "AISight",
+      },
+    },
+  };
+
+  const labels = ["Normal", "Cataract", "Diabetes", "Glaucoma"];
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: "Your diagnosis",
+        data: resArr,
+        backgroundColor: "#551D6A",
+      },
+    ],
+  };
   // Handle form submission
   const handleSubmit = (event) => {
     event.preventDefault();
 
     // setImg(event.target.files[0]);
-
+    setLoading(true);
     console.log(img);
     // Convert Base64 to file
     const blob = base64ToBlob(img);
@@ -41,29 +93,27 @@ function Capture() {
     console.log(file);
     // Send file as form data to backend
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("my_file", file);
 
     // Make a POST request to backend API
-    fetch(process.env.REACT_APP_BACKEND_SERVER + "uploadfile", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.log(error));
+    // fetch(process.env.REACT_APP_BACKEND_SERVER + "uploadfile", {
+    //   method: "POST",
+    //   body: formData,
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => console.log(data))
+    //   .catch((error) => console.log(error));
 
-    //   axios
-    //   .post(process.env.REACT_APP_BACKEND_SERVER + "uploadfile", {
-    //     formData
-    //   })
-    //   .then((res) => {
-
-    //     console.log(res);
-
-    //   })
-    //   .catch((error) => {
-    //     console.log(error.message);
-    //   });
+    axios
+      .post("http://192.168.245.158:8050/file", formData)
+      .then((res) => {
+        setResArr(res.data.Scores);
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.log(error.message);
+        // notify("error");
+      });
   };
 
   // Convert Base64 to blob
@@ -85,6 +135,7 @@ function Capture() {
   useLayoutEffect(() => {
     console.log(img);
   }, [img]);
+
   return (
     <motion.div
       className="flex flex-col items-center justify-center"
@@ -115,21 +166,39 @@ function Capture() {
         </>
       ) : (
         <>
-          <img src={img} alt="captured image" className="w-3/4"/>
-          <div className="flex items-center justify-center gap-4 mt-4">
-            <form onSubmit={handleSubmit}>
-              <button type="submit" className="bg-[#5f47a8] text-white font-bold rounded-md p-4">
-                Submit
-              </button>
-            </form>
+          {resArr == null ? (
+            <>
+              <img src={img} alt="captured image" className="w-3/4" />
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <form onSubmit={handleSubmit}>
+                  <button
+                    type="submit"
+                    className="bg-[#5f47a8] text-white font-bold rounded-md p-4"
+                  >
+                    Submit
+                  </button>
+                </form>
 
-            <button
-              onClick={() => setImg(null)}
-              className="bg-white rounded-md p-4"
-            >
-              Retake
-            </button>
-          </div>
+                <button
+                  onClick={() => setImg(null)}
+                  className="bg-white rounded-md p-4"
+                >
+                  Retake
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-md p-4 w-3/4 h-3/4">
+              {loading && <img src={waiting} />}
+              {!loading && (
+                <Bar
+                  options={options}
+                  data={data}
+                  className="text-black w-full"
+                />
+              )}
+            </div>
+          )}
         </>
       )}
     </motion.div>
